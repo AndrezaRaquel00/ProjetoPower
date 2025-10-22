@@ -1,7 +1,6 @@
 import os
 import uuid
 
-
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
@@ -241,38 +240,36 @@ def limpar_carrinho():
     flash('Carrinho limpo com sucesso!')
     return redirect(url_for('carrinho'))
 
-@app.route('/finalizar-compra', methods=['GET', 'POST'])
+@app.route('/finalizar_compra', methods=['GET', 'POST'])
 def finalizar_compra():
     if 'usuario' not in session:
         flash('Faça login para finalizar a compra')
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        email_cliente = request.form.get('email')
         cep = request.form.get('cep')
         rua = request.form.get('rua')
-        numero = request.form.get('numero')
+        numero_endereco = request.form.get('numero')
         complemento = request.form.get('complemento')
         bairro = request.form.get('bairro')
         cidade = request.form.get('cidade')
         estado = request.form.get('estado')
+        email_cliente = request.form.get('email')
 
-        if not all([email_cliente, cep, rua, numero, bairro, cidade, estado]):
-            flash('Preencha todos os campos obrigatórios.')
+        if not all([cep, rua, numero_endereco, bairro, cidade, estado, email_cliente]):
+            flash('Preencha todos os campos, incluindo o e-mail para confirmação.')
             return redirect(url_for('finalizar_compra'))
 
         usuario = Usuario.query.filter_by(nome=session['usuario']).first()
-
-        # Criar pedido no banco
         pedido = Pedido(usuario_id=usuario.id)
         db.session.add(pedido)
-        db.session.flush()  # gera ID do pedido
+        db.session.flush()  # já temos pedido.id
 
         endereco = Endereco(
             pedido_id=pedido.id,
             cep=cep,
             rua=rua,
-            numero_endereco=numero,
+            numero_endereco=numero_endereco,
             complemento=complemento,
             bairro=bairro,
             cidade=cidade,
@@ -282,30 +279,24 @@ def finalizar_compra():
 
         total = 0.0
         for pid in session.get('carrinho', []):
-            produto = Produto.query.get(pid)
-            if produto:
-                total += float(produto.preco)
+            prod = Produto.query.get(pid)
+            if prod:
+                total += float(prod.preco)
                 item = ItemPedido(pedido_id=pedido.id, produto_id=pid)
                 db.session.add(item)
 
         db.session.commit()
         session['carrinho'] = []
 
-        # Enviar e-mail de confirmação
         try:
-            msg = Message(
-                subject="🎉 Obrigado pela sua compra - Gym Ware",
-                recipients=[email_cliente],
-                body=f"Olá {usuario.nome},\n\nSua compra foi finalizada com sucesso!\nValor total: R$ {total:.2f}\n\nObrigado por confiar na Gym Ware! 💪"
-            )
-            mail.send(msg)
+            enviar_confirmacao_compra(email_cliente, pedido.id, session.get('usuario', 'Cliente'), total)
         except Exception as e:
-            print("Erro ao enviar e-mail:", e)
+            print('Falha ao enviar e-mail de pedido:', e)
 
-        return render_template('obrigado.html')
+        return render_template('obrigado.html', nome=session.get('usuario', 'Cliente'))
+
 
     return render_template('finalizar_compra.html')
-
 
 @app.route('/avaliar/<int:produto_id>', methods=['POST'])
 def avaliar(produto_id):
@@ -415,6 +406,32 @@ def recover():
             flash(f'Erro: {e}', 'danger')
         return redirect(url_for('recover'))
     return render_template('recover.html')
+@app.route('/faq')
+def faq():
+    faqs = [
+        ("Quais formas de pagamento são aceitas?", "Aceitamos Pix, cartão de crédito, débito e boleto bancário."),
+        ("Os produtos são originais?", "Sim! Todos os nossos suplementos e roupas são 100% originais e com nota fiscal."),
+        ("Quanto tempo demora a entrega?", "O prazo médio é de 3 a 10 dias úteis, dependendo da sua região."),
+        ("Vocês enviam para todo o Brasil?", "Sim, realizamos entregas em todo o território nacional."),
+        ("Como acompanho meu pedido?", "Você pode acessar a aba 'Meus Pedidos' no menu superior para acompanhar o status."),
+        ("Posso trocar um produto?", "Sim, temos uma política de troca em até 7 dias após o recebimento."),
+        ("O whey protein é indicado para iniciantes?", "Sim, ele ajuda na recuperação muscular e pode ser usado por quem está começando."),
+        ("As roupas possuem tamanhos grandes?", "Sim, trabalhamos com tamanhos do P ao GG e alguns modelos até XG."),
+        ("Os produtos têm garantia?", "Sim, todos os produtos têm garantia de fabricação conforme o fornecedor."),
+        ("Posso comprar sem criar uma conta?", "Não. É necessário ter uma conta para garantir segurança e controle do pedido."),
+        ("Vocês têm loja física?", "Atualmente, atendemos apenas online, com envios rápidos e suporte personalizado."),
+        ("Como funciona o frete grátis?", "Oferecemos frete grátis em compras acima de R$250,00."),
+        ("O site é seguro?", "Sim! Nosso site utiliza criptografia SSL e gateways de pagamento confiáveis."),
+        ("Posso cancelar meu pedido?", "Sim, o cancelamento é possível antes da expedição do pedido."),
+        ("Qual o prazo para reembolso?", "O reembolso é feito em até 5 dias úteis após a confirmação da devolução."),
+        ("Os suplementos têm validade longa?", "Sim, todos são enviados com no mínimo 6 meses de validade."),
+        ("Vocês têm atendimento pelo WhatsApp?", "Sim! Nosso atendimento via WhatsApp está disponível de segunda a sábado."),
+        ("As roupas encolhem na lavagem?", "Não, nossos tecidos são de alta qualidade e resistentes a lavagens."),
+        ("Vocês oferecem desconto para academia ou grupos?", "Sim! Entre em contato para saber mais sobre nossos pacotes corporativos."),
+        ("Como posso entrar em contato com o suporte?", "Você pode usar o chat do site ou enviar um e-mail para suporte@gymware.com.br."),
+    ]
+    return render_template('faq.html', faqs=faqs)
+
 
 @app.route('/teste-email')
 def teste_email():
@@ -444,7 +461,7 @@ if __name__ == '__main__':
 def enviar_confirmacao_compra(nome: str, email_destino: str, itens: list[dict], total: float) -> None:
     """
     Envia e-mail de confirmação de compra.
-    itens deve ser uma lista de dicionários no formato:
+    `itens` deve ser uma lista de dicionários no formato:
         {"produto": "Nome", "quantidade": 2, "preco": 50.0}
     """
     try:
@@ -473,5 +490,3 @@ def enviar_confirmacao_compra(nome: str, email_destino: str, itens: list[dict], 
     except Exception as e:
         print(f"❌ Erro ao enviar e-mail de compra: {e}")
         raise
-
-

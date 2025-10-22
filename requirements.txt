@@ -1,5 +1,4 @@
 Flask
 Flask-Mail
-Flask-SQLAlchemy
 python-dotenv
-gunicorn
+Flask-SQLAlchemy

@@ -6,6 +6,7 @@
   <title>PowerSupps - Loja de Suplementos</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    
     :root {
       --primary: #1a73e8;
       --secondary: #34a853;
@@ -479,6 +480,124 @@
     .btn-pedidos:hover {
       color: var(--primary);
     }
+  
+
+/* 🔹 Chatbot */
+#chatbot-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  font-family: 'Arial', sans-serif;
+  z-index: 9999;
+}
+
+#chatbot-button {
+  background-color: #007bff;
+  color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 28px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+#chatbot-button:hover {
+  background-color: #0056b3;
+}
+
+#chatbot-box {
+  width: 300px;
+  background-color: white;
+  border: 2px solid #007bff;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  position: absolute;
+  bottom: 80px;
+  right: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden {
+  display: none;
+}
+
+#chatbot-header {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#chatbot-header h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+#chatbot-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+#chatbot-body {
+  padding: 10px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.bot-msg {
+  color: #333;
+  background: #f1f1f1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+#chatbot-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-option {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chat-option:hover {
+  background-color: #0056b3;
+}
+/* ✨ Animação de abrir/fechar */
+#chatbot-box {
+  transform: translateY(30px);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+#chatbot-box.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+#chatbot-box.hidden {
+  display: none;
+}
   </style>
 </head>
 <body>
@@ -540,6 +659,11 @@
         </a>
       {% endif %}
     </div>
+    <a href="{{ url_for('faq') }}" class="user-action">
+  <i class="fas fa-question-circle"></i>
+  <span>FAQ</span>
+</a>
+
   </header>
 
 
@@ -700,6 +824,77 @@
       });
     });
   </script>
-  
+  <!-- Chatbot -->
+<div id="chatbot-container">
+  <div id="chatbot-button">💬</div>
+  <div id="chatbot-box" class="hidden">
+    <div id="chatbot-header">
+      <h4>PowerBot 🏋️</h4>
+      <button id="chatbot-close">×</button>
+    </div>
+    <div id="chatbot-body">
+      <p class="bot-msg">Olá! 👋 Sou o PowerBot. Escolha uma pergunta abaixo:</p>
+      <div id="chatbot-options">
+        <button class="chat-option">O que é whey protein?</button>
+        <button class="chat-option">Qual o melhor horário para treinar?</button>
+        <button class="chat-option">Creatina faz mal?</button>
+        <button class="chat-option">Como ganhar massa muscular?</button>
+        <button class="chat-option">Suplementos substituem refeições?</button>
+        <button class="chat-option">Quanto tempo leva pra ver resultados?</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const chatbotButton = document.getElementById('chatbot-button');
+  const chatbotBox = document.getElementById('chatbot-box');
+  const chatbotClose = document.getElementById('chatbot-close');
+  const chatbotBody = document.getElementById('chatbot-body');
+
+  const respostas = {
+    "O que é whey protein?": "O whey protein é uma proteína derivada do soro do leite, usada para ajudar na recuperação muscular e no ganho de massa magra.",
+    "Qual o melhor horário para treinar?": "O melhor horário é aquele que se encaixa na sua rotina! O importante é manter a constância nos treinos.",
+    "Creatina faz mal?": "Não! A creatina é uma substância natural e segura quando usada nas doses recomendadas, melhorando força e desempenho.",
+    "Como ganhar massa muscular?": "Combine treinos de força, alimentação rica em proteínas e um bom descanso. A constância é a chave!",
+    "Suplementos substituem refeições?": "Não. Suplementos apenas complementam a dieta, não substituem refeições completas.",
+    "Quanto tempo leva pra ver resultados?": "Depende da intensidade, alimentação e genética. Em geral, 4 a 8 semanas já trazem mudanças visíveis."
+  };
+
+  // ✅ Animações e exibição
+  chatbotButton.addEventListener('click', () => {
+    chatbotBox.classList.remove('hidden');
+    chatbotBox.classList.add('show');
+  });
+
+  chatbotClose.addEventListener('click', () => {
+    chatbotBox.classList.remove('show');
+    setTimeout(() => {
+      chatbotBox.classList.add('hidden');
+    }, 300); // espera a animação terminar antes de esconder
+  });
+
+  // ✅ Respostas do bot
+  document.querySelectorAll('.chat-option').forEach(button => {
+    button.addEventListener('click', () => {
+      const pergunta = button.textContent;
+      const resposta = respostas[pergunta] || "Desculpe, não tenho uma resposta para isso.";
+      const userMsg = document.createElement('p');
+      userMsg.classList.add('bot-msg');
+      userMsg.style.background = '#007bff';
+      userMsg.style.color = 'white';
+      userMsg.textContent = pergunta;
+      chatbotBody.appendChild(userMsg);
+
+      const botMsg = document.createElement('p');
+      botMsg.classList.add('bot-msg');
+      botMsg.textContent = resposta;
+      chatbotBody.appendChild(botMsg);
+
+      chatbotBody.scrollTop = chatbotBody.scrollHeight;
+    });
+  });
+});
+</script>
 </body>
 </html>
